@@ -24,7 +24,10 @@ static retro_input_state_t input_state_cb;
 
 #define SAVE_FILE_NAME "2048.srm"
 
-static float frame_time        = 0;
+/* One retro_run is one frame at the declared rate, so animation
+ * advances by this much per call and looks the same wherever it
+ * runs, whatever the host manages to schedule. */
+static float frame_step        = 1.0f / 60;
 static int game_fps            = 60;
 
 static bool first_run          = true;
@@ -37,8 +40,6 @@ static void *game_data_scratch = NULL;
 static bool libretro_supports_bitmasks = false;
 bool libretro_supports_sw_fb    = false;
 bool libretro_sw_fb_checked     = false;
-
-static struct retro_frame_time_callback frame_cb;
 
 bool dark_theme = false;
 
@@ -161,7 +162,7 @@ void retro_init(void)
 {
    struct retro_log_callback logging;
 
-   frame_time        = 0;
+   frame_step        = 1.0f / 60;
    first_run         = true;
    sram_accessed     = false;
    use_sram_file     = false;
@@ -191,7 +192,7 @@ void retro_deinit(void)
 
    game_deinit();
 
-   frame_time        = 0;
+   frame_step        = 1.0f / 60;
    first_run         = true;
    sram_accessed     = false;
    use_sram_file     = false;
@@ -241,15 +242,9 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.aspect_ratio = 0.0;
 }
 
-static void frame_time_cb(retro_usec_t usec)
-{
-   frame_time = usec / 1000000.0;
-}
-
 static void check_variables(void)
 {
    struct retro_variable var        = {0};
-   int old_refresh = game_fps;
 
    var.key = "2048_theme";
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -263,14 +258,8 @@ static void check_variables(void)
    var.key = "2048_fps";
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      int new_refresh = atoi(var.value);
-      game_fps = new_refresh;
-
-      if (old_refresh != new_refresh) {
-         frame_cb.callback  = frame_time_cb;
-         frame_cb.reference = 1000000 / game_fps;
-         environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
-      }
+      game_fps   = atoi(var.value);
+      frame_step = 1.0f / (float)game_fps;
    }
 }
 
@@ -377,7 +366,7 @@ void retro_run(void)
    ks.start  = (ret & (1 << RETRO_DEVICE_ID_JOYPAD_START));
    ks.select = (ret & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT));
 
-   game_update(frame_time, &ks);
+   game_update(frame_step, &ks);
    game_render();
 }
 
@@ -399,11 +388,6 @@ bool retro_load_game(const struct retro_game_info *info)
 
    if (!game_init_pixelformat())
       return false;
-
-   frame_cb.callback  = frame_time_cb;
-   frame_cb.reference = 1000000 / game_fps;
-   frame_cb.callback(frame_cb.reference);
-   environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
 
    return true;
 }
