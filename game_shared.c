@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
@@ -13,6 +12,39 @@ static float delta_score_time;
 static float frame_time = 0.016;
 
 #define PI 3.14159
+
+/* Tile spawns are driven by this generator alone, so a given
+ * state plus a given input sequence always yields the same
+ * board on every platform, run and rewind. The state travels
+ * in the serialised data and returns to the seed whenever the
+ * frontend resets the core, so both sides of a netplay session
+ * start from the same point. An in-game restart carries the
+ * state forward, which keeps consecutive games varied. */
+#define RNG_SEED 0x32303438u
+
+uint32_t game_rng_state = RNG_SEED;
+
+static uint32_t rng_next(void)
+{
+   uint32_t x = game_rng_state;
+
+   /* zero is the one state this generator cannot leave,
+    * so treat it as unseeded */
+   if (!x)
+      x = RNG_SEED;
+
+   x ^= x << 13;
+   x ^= x >> 17;
+   x ^= x << 5;
+
+   game_rng_state = x;
+   return x;
+}
+
+void game_rng_reset(void)
+{
+   game_rng_state = RNG_SEED;
+}
 
 /* out back bicubic
  * from http://www.timotheegroleau.com/Flash/experiments/easing_function_generator.htm
@@ -108,12 +140,12 @@ static void add_tile(void)
 
    if (j)
    {
-      j = rand() % j;
+      j = (int)(rng_next() % (uint32_t)j);
       empty[j]->old_pos = empty[j]->pos;
       empty[j]->source = NULL;
       empty[j]->move_time = 1;
       empty[j]->appear_time = 0;
-      empty[j]->value = ((float)rand() / RAND_MAX) < 0.9 ? 1 : 2;
+      empty[j]->value = (rng_next() % 100u) < 90u ? 1 : 2;
    }
    else
       change_state(STATE_GAME_OVER);
@@ -443,6 +475,7 @@ void handle_input(key_state_t *ks)
 
 void game_reset(void)
 {
+   game_rng_reset();
    start_game();
 }
 

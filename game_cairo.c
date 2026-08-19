@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <time.h>
 #include <assert.h>
 
 #include <cairo/cairo.h>
@@ -205,7 +204,6 @@ static void init_static_surface(void)
 void game_init(void)
 {
    frame_buf = calloc(SCREEN_HEIGHT, SCREEN_PITCH);
-   srand(time(NULL));
 
    surface = cairo_image_surface_create_for_data(
             (unsigned char*)frame_buf, CAIRO_FORMAT_RGB16_565, SCREEN_WIDTH, SCREEN_HEIGHT,

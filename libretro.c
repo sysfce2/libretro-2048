@@ -179,6 +179,7 @@ void retro_init(void)
 
    game_calculate_pitch();
 
+   game_rng_reset();
    game_init();
 }
 
@@ -426,28 +427,36 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-   return game_data_size();
+   return game_data_size() + sizeof(game_rng_state);
 }
 
 bool retro_serialize(void *data_, size_t size)
 {
+   unsigned char *data = (unsigned char*)data_;
+
    block_sram_write = false;
 
-   if (size < game_data_size())
+   if (size < retro_serialize_size())
       return false;
 
-   memcpy(data_, game_data(), game_data_size());
+   memcpy(data, game_data(), game_data_size());
+   memcpy(data + game_data_size(), &game_rng_state,
+         sizeof(game_rng_state));
    return true;
 }
 
 bool retro_unserialize(const void *data_, size_t size)
 {
+   const unsigned char *data = (const unsigned char*)data_;
+
    block_sram_write = true;
 
-   if (size < game_data_size())
+   if (size < retro_serialize_size())
       return false;
 
-   memcpy(game_data(), data_, game_data_size());
+   memcpy(game_data(), data, game_data_size());
+   memcpy(&game_rng_state, data + game_data_size(),
+         sizeof(game_rng_state));
    return true;
 }
 
@@ -468,8 +477,8 @@ void *retro_get_memory_data(unsigned id)
     * 2. retro_unserialize() is called
     * 3. The SRAM data from (1) is written back
     *    to the core
-    * The issue here is that the SRAM data and the
-    * serialised data for this core are identical
+    * The issue here is that the SRAM buffer is the
+    * same game state the serialised data restores
     * (they both access the same buffer). Thus
     * step (3) reverts the de-serialisation operation
     * by overwriting the result with the previous

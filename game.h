@@ -23,6 +23,7 @@
 #define SCREEN_HEIGHT  BOARD_OFFSET_Y + BOARD_HEIGHT + SPACING
 
 extern int SCREEN_PITCH;
+extern uint32_t game_rng_state;
 extern bool dark_theme;
 
 typedef struct
@@ -87,6 +88,7 @@ void game_calculate_pitch(void);
 void game_init(void);
 void game_deinit(void);
 void game_reset(void);
+void game_rng_reset(void);
 void game_update(float delta, key_state_t *new_ks);
 void *game_data(void);
 void *game_save_data(void);

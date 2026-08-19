@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <time.h>
 #include <assert.h>
 
 extern bool libretro_supports_sw_fb;
@@ -377,10 +376,7 @@ static void init_static_surface(void)
 
 void game_init(void)
 {
-   unsigned int t = (unsigned int)time(NULL);
    frame_buf = calloc(SCREEN_HEIGHT, SCREEN_PITCH);
-
-   srand(t);
 
    initgraph();
 
