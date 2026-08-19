@@ -41,9 +41,9 @@ ctx_t nullctx={0,0,0};
  
 #define PITCH 4
 #if defined(ABGR8888)
-#define RGB32(r, g, b,a)  ( (a)<<24 |((b) << (16)) | ((g) << 8) | ((r) << 0))
+#define RGB32(r, g, b, a) (((uint32_t)(a) << 24) | ((uint32_t)(b) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(r))
 #else
-#define RGB32(r, g, b,a)  ( (a)<<24 |((r) << (16)) | ((g) << 8) | ((b) << 0))
+#define RGB32(r, g, b, a) (((uint32_t)(a) << 24) | ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b))
 #endif
 #define nullctx_fontsize(a) nullctx.fontsize_x=nullctx.fontsize_y=a
 
