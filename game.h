@@ -91,6 +91,8 @@ void game_reset(void);
 void game_rng_reset(void);
 void game_update(float delta, key_state_t *new_ks);
 void *game_data(void);
+void  game_data_settle(void);
+void  game_data_snapshot(void *dst);
 void *game_save_data(void);
 unsigned game_data_size(void);
 void game_render(void);

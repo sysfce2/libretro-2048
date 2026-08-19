@@ -79,19 +79,39 @@ void *game_data(void)
    return &game;
 }
 
+/* A merge in flight parks a pointer to the absorbed cell in
+ * source, and both timers count real seconds, so a board that
+ * leaves this process has to be settled first: the pointer means
+ * nothing anywhere else, and the timers would otherwise carry
+ * the host's frame pacing into the serialised bytes. */
+static void settle_board(game_t *board)
+{
+   int i;
+
+   for (i = 0; i < GRID_SIZE; i++)
+   {
+      board->grid[i].appear_time = 1;
+      board->grid[i].move_time   = 1;
+      board->grid[i].source      = NULL;
+   }
+}
+
+void game_data_settle(void)
+{
+   settle_board(&game);
+}
+
+void game_data_snapshot(void *dst)
+{
+   game_t *board = (game_t*)dst;
+
+   *board = game;
+   settle_board(board);
+}
+
 void *game_save_data(void)
 {
-   int row, col;
-
-   /* stop animations */
-   for (row = 0; row < 4; row++)
-   {
-      for (col = 0; col < 4; col++)
-      {
-         game.grid[row * 4 + col].appear_time = 1;
-         game.grid[row * 4 + col].move_time   = 1;
-      }
-   }
+   game_data_settle();
 
    delta_score_time = 1;
 

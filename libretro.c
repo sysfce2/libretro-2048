@@ -112,6 +112,7 @@ static void read_save_file(void)
       /* Read save file */
       filestream_read(save_file, game_data(), game_data_size());
       filestream_close(save_file);
+      game_data_settle();
 
       log_2048(RETRO_LOG_INFO, "Loaded save file: %s\n", save_path);
    }
@@ -432,6 +433,7 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data_, size_t size)
 {
+   game_t settled;
    unsigned char *data = (unsigned char*)data_;
 
    block_sram_write = false;
@@ -439,7 +441,8 @@ bool retro_serialize(void *data_, size_t size)
    if (size < retro_serialize_size())
       return false;
 
-   memcpy(data, game_data(), game_data_size());
+   game_data_snapshot(&settled);
+   memcpy(data, &settled, game_data_size());
    memcpy(data + game_data_size(), &game_rng_state,
          sizeof(game_rng_state));
    return true;
@@ -457,6 +460,7 @@ bool retro_unserialize(const void *data_, size_t size)
    memcpy(game_data(), data, game_data_size());
    memcpy(&game_rng_state, data + game_data_size(),
          sizeof(game_rng_state));
+   game_data_settle();
    return true;
 }
 
